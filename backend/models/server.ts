@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import projectRoutes from '../routes/project';
 import taskRoutes from '../routes/task';
+import authRoutes from '../routes/auth';
 
 class Server {
   private app: Application;
@@ -9,6 +10,7 @@ class Server {
   private apiPaths = {
     projects: '/projects',
     tasks: '/tasks',
+    auth: '/auth',
   };
 
   constructor() {
@@ -29,6 +31,7 @@ class Server {
   routes() {
     this.app.use(this.apiPaths.projects, projectRoutes);
     this.app.use(this.apiPaths.tasks, taskRoutes);
+    this.app.use(this.apiPaths.auth, authRoutes);
   }
 
   listen() {

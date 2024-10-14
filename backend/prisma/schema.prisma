@@ -13,34 +13,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Usuario {
-  id        Int      @id @default(autoincrement())
-  nombre    String
-  email     String   @unique
-  contrasena String
-  rol       String   // Puede ser "admin" o "usuario"
-  proyectos Proyecto[]
-  tareas    Tarea[]  @relation("UsuarioTareas")
+enum UserRole {
+  ADMIN
+  USER
 }
 
-model Proyecto {
-  id               Int      @id @default(autoincrement())
-  nombre           String
-  descripcion      String
-  fecha_inicio     DateTime
-  fecha_finalizacion DateTime
-  usuario_id       Int
-  usuario          Usuario  @relation(fields: [usuario_id], references: [id])
-  tareas           Tarea[]
+enum TaskState {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
 }
 
-model Tarea {
-  id         Int      @id @default(autoincrement())
-  nombre     String
-  descripcion String
-  estado     String   // "pendiente", "en progreso", "completada"
-  proyecto_id Int
-  proyecto   Proyecto @relation(fields: [proyecto_id], references: [id])
-  asignada_a Int
-  usuario    Usuario  @relation("UsuarioTareas", fields: [asignada_a], references: [id])
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      UserRole   @default(USER)
+  projects  ProjectUser[]  // Relation many to many with the intermediate table ProjectUser
+  tasks     Task[]     // Relation one to many with Task
+}
+
+model Project {
+  id           Int          @id @default(autoincrement())
+  name         String
+  description  String
+  start_date   DateTime
+  end_date     DateTime
+  users        ProjectUser[]  // Relation many to many with the intermediate table ProjectUser
+  tasks        Task[]       // Relation one to many with Task
+}
+
+model Task {
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String
+  state        TaskState @default(PENDING)
+  project_id   Int
+  project      Project @relation(fields: [project_id], references: [id])
+  assigned_to  String
+  user         User    @relation(fields: [assigned_to], references: [id])
+}
+
+model ProjectUser {
+  user_id     String
+  project_id  Int
+
+  user       User     @relation(fields: [user_id], references: [id])
+  project    Project  @relation(fields: [project_id], references: [id])
+
+  @@id([user_id, project_id])
 }

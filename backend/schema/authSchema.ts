@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
 export const authSchema = z.object({
-  email: z.string().email({ message: 'Correo inválido' }),
+  name: z.string().min(1, { message: 'The name is required' }),
+  email: z.string().email({ message: 'Invalid mail' }),
   password: z
     .string()
-    .min(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
-    .max(100, { message: 'La contraseña no puede exceder los 100 caracteres' }),
+    .min(6, { message: 'The password must be at least 6 characters long' })
+    .max(100, { message: 'Password cannot exceed 100 characters' }),
 });

@@ -29,6 +29,7 @@ model User {
   name      String
   email     String     @unique
   password  String
+  status    Int        @default(1)
   role      UserRole   @default(USER)
   projects  ProjectUser[]  // Relation many to many with the intermediate table ProjectUser
   tasks     Task[]     // Relation one to many with Task

@@ -1,10 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../prisma';
 import bcrypt from 'bcryptjs';
-import { z, ZodError } from 'zod';
-import { CustomError } from '../types/CustomError';
-
-const prisma = new PrismaClient();
+import { generateJWT } from '../helpers/generateJWT';
 
 export const login = async (
   req: Request,
@@ -32,6 +29,15 @@ export const login = async (
     if (!isPasswordValid) {
       res.status(401).json({ message: 'Invalid password' });
     }
+
+    // JWT
+    const token = await generateJWT(user.id, user.name);
+
+    res.cookie('acces_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
 
     res.status(200).json({
       message: 'Login successful',
@@ -72,6 +78,15 @@ export const register = async (
         name,
         role: 'USER',
       },
+    });
+
+    // Generate Token
+    const token = await generateJWT(newUser.id, newUser.name);
+
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
     });
 
     res.status(201).json({

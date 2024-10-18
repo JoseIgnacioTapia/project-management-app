@@ -1,4 +1,4 @@
-import express, { Application } from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import projectRoutes from '../routes/project';
 import taskRoutes from '../routes/task';
@@ -19,6 +19,7 @@ class Server {
 
     this.middlewares();
     this.routes();
+    this.handleErrors();
   }
 
   middlewares() {
@@ -32,6 +33,25 @@ class Server {
     this.app.use(this.apiPaths.projects, projectRoutes);
     this.app.use(this.apiPaths.tasks, taskRoutes);
     this.app.use(this.apiPaths.auth, authRoutes);
+  }
+
+  handleErrors() {
+    // Route Not Found Hangled Error
+    this.app.use((req: Request, res: Response, next: NextFunction) => {
+      res.status(404).json({
+        message: 'Resource not found',
+      });
+    });
+
+    // General Server Errors
+    this.app.use(
+      (err: Error, req: Request, res: Response, next: NextFunction) => {
+        console.error(err);
+        res.status(500).json({
+          message: 'Internal Server Error',
+        });
+      }
+    );
   }
 
   listen() {

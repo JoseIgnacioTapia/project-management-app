@@ -9,9 +9,15 @@ export const validateAuth =
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        console.log(error);
-        res.status(400).json({ errors: error.errors });
+        res.status(400).json({
+          message: 'Validation failed',
+          errors: error.errors.map((e) => ({
+            field: e.path[0],
+            message: e.message,
+          })),
+        });
+      } else {
+        next(error);
       }
-      res.status(500).json({ message: 'Error interno del servidor' });
     }
   };

@@ -1,11 +1,16 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
+import { CustomError } from '../types/CustomError';
 
 const prisma = new PrismaClient();
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { email, password } = req.body;
 
@@ -14,26 +19,18 @@ export const login = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      res.status(404).json({
-        message: 'User not found',
-      });
+      res.status(404).json({ message: 'User not found' });
       return;
     }
 
     if (user.status === 0) {
-      res.status(403).json({
-        message: 'User is inactive',
-      });
-      return;
+      res.status(403).json({ message: 'User is inactive' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      res.status(401).json({
-        message: 'Invalid password',
-      });
-      return;
+      res.status(401).json({ message: 'Invalid password' });
     }
 
     res.status(200).json({
@@ -46,26 +43,24 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
-      message: 'An error occurred during login',
-    });
+    next(error);
   }
 };
 
-export const register = async (req: Request, res: Response): Promise<void> => {
+export const register = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { email, password, name } = req.body;
-    console.log('Received data:', { email, password, name });
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      res.status(400).json({
-        message: 'The e-mail address is already registered',
-      });
-      return;
+      res.status(409).json({ message: 'E-mail address already registered' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -89,15 +84,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({
-        message: 'Validation error',
-        errors: error.errors,
-      });
-    }
-
-    res.status(500).json({
-      message: 'An error occurred while registering the user',
-    });
+    next(error);
   }
 };

@@ -48,7 +48,7 @@ class Server {
       (err: Error, req: Request, res: Response, next: NextFunction) => {
         console.error(err);
         res.status(500).json({
-          message: 'Internal Server Error',
+          message: 'Internal Server Error!',
         });
       }
     );

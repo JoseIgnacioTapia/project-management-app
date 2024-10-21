@@ -2,9 +2,10 @@ import jwt from 'jsonwebtoken';
 
 export const generateJWT = async (
   uid: string,
-  name: string
+  name: string,
+  role: string
 ): Promise<string> => {
-  const payload = { uid, name };
+  const payload = { uid, name, role };
 
   return new Promise((resolve, reject) => {
     jwt.sign(

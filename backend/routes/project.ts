@@ -6,12 +6,14 @@ import {
   postProject,
   putProject,
 } from '../controllers/projects';
+import { authenticateJWT } from '../middlewares/authenticateJWT';
+import { authorizeRoles } from '../middlewares/authorizeRole';
 
 const router = Router();
 
 router.get('/', getProjects);
 router.get('/:id', getProject);
-router.post('/', postProject);
+router.post('/', authenticateJWT, authorizeRoles('ADMIN'), postProject);
 router.put('/:id', putProject);
 router.delete('/:id', deleteProject);
 

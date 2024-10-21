@@ -2,8 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { ZodError, ZodSchema } from 'zod';
 
 export const validateAuth =
-  (schema: ZodSchema) =>
-  (req: Request, res: Response, next: NextFunction): void => {
+  (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
     try {
       schema.parse(req.body);
       next();

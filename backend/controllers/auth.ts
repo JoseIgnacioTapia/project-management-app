@@ -31,12 +31,14 @@ export const login = async (
     }
 
     // JWT
-    const token = await generateJWT(user.id, user.name);
+    const token = await generateJWT(user.id, user.name, user.role);
+    console.log(token);
 
-    res.cookie('acces_token', token, {
+    res.cookie('access_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
+      path: '/',
     });
 
     res.status(200).json({
@@ -81,12 +83,13 @@ export const register = async (
     });
 
     // Generate Token
-    const token = await generateJWT(newUser.id, newUser.name);
+    const token = await generateJWT(newUser.id, newUser.name, newUser.role);
 
     res.cookie('access_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
+      path: '/',
     });
 
     res.status(201).json({
@@ -101,4 +104,14 @@ export const register = async (
   } catch (error) {
     next(error);
   }
+};
+
+export const logout = (req: Request, res: Response) => {
+  res.clearCookie('access_token', {
+    httpOnly: true,
+    // secure: process.env.NODE_ENV === 'production',
+    secure: false,
+    sameSite: 'strict',
+  });
+  res.status(200).json({ message: 'Logout successful' });
 };

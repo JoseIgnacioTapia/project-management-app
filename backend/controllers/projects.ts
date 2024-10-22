@@ -1,10 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma';
 
-export const getProjects = (req: Request, res: Response) => {
-  res.json({
-    msg: 'getProjects',
-  });
+export const getProjects = async (req: Request, res: Response) => {
+  try {
+    const projects = await prisma.project.findMany({
+      include: {
+        users: true,
+        tasks: true,
+      },
+    });
+
+    res.status(200).json(projects);
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    res.status(500).json({
+      message: 'Error fetching projects',
+    });
+  }
 };
 
 export const getProject = (req: Request, res: Response) => {

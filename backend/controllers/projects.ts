@@ -41,6 +41,15 @@ export const postProject = async (
     const { name, description, start_date, end_date, users, tasks } =
       validatedData;
 
+    const existingProject = await prisma.project.findFirst({
+      where: { name },
+    });
+
+    if (existingProject) {
+      res.status(409).json({ message: 'Name Project is already registered' });
+      return;
+    }
+
     const newProject = await prisma.project.create({
       data: {
         name,

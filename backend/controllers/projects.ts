@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma';
+import { projectSchema } from '../schema/projectSchema';
+import { z } from 'zod';
 
 export const getProjects = async (req: Request, res: Response) => {
   try {
@@ -34,12 +36,10 @@ export const postProject = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { name, description, start_date, end_date, users, tasks } = req.body;
+    const validatedData = projectSchema.parse(req.body);
 
-    if (!name || !description || !start_date || !end_date) {
-      res.status(400).json({ message: 'Missing required fields' });
-      return;
-    }
+    const { name, description, start_date, end_date, users, tasks } =
+      validatedData;
 
     const newProject = await prisma.project.create({
       data: {
@@ -72,6 +72,16 @@ export const postProject = async (
       .status(201)
       .json({ message: 'Project created successfully', project: newProject });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: error.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message,
+        })),
+      });
+    }
+
     next(error);
   }
 };

@@ -32,7 +32,6 @@ export const login = async (
 
     // JWT
     const token = await generateJWT(user.id, user.name, user.role);
-    console.log(token);
 
     res.cookie('access_token', token, {
       httpOnly: true,

@@ -1,5 +1,6 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import projectRoutes from '../routes/project';
 import taskRoutes from '../routes/task';
 import authRoutes from '../routes/auth';
@@ -25,8 +26,10 @@ class Server {
   middlewares() {
     // CORS
     this.app.use(cors());
-    // Lectura del body
+    // Body lecture
     this.app.use(express.json());
+    // Cookie Parser
+    this.app.use(cookieParser());
   }
 
   routes() {

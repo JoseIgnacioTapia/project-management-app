@@ -21,13 +21,35 @@ export const getProjects = async (req: Request, res: Response) => {
   }
 };
 
-export const getProject = (req: Request, res: Response) => {
-  const { id } = req.params;
+export const getProject = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const projectId = Number(id);
 
-  res.json({
-    msg: 'getProject',
-    id,
-  });
+    if (isNaN(projectId)) {
+      res.status(400).json({ message: 'Invalid project ID' });
+    }
+
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        users: true,
+        tasks: true,
+      },
+    });
+
+    if (!project) {
+      res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json({ project });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const postProject = async (

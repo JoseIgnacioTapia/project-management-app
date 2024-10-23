@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import projectRoutes from '../routes/project';
 import taskRoutes from '../routes/task';
 import authRoutes from '../routes/auth';
+import { authenticateJWTUnless } from '../middlewares/authenticateJWTUnless';
 
 class Server {
   private app: Application;
@@ -30,6 +31,9 @@ class Server {
     this.app.use(express.json());
     // Cookie Parser
     this.app.use(cookieParser());
+
+    // Global Authentication
+    this.app.use(authenticateJWTUnless);
   }
 
   routes() {

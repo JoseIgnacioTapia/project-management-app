@@ -13,7 +13,7 @@ const router = Router();
 
 router.get('/', getProjects);
 router.get('/:id', getProject);
-router.post('/', authenticateJWT, authorizeRoles('ADMIN'), postProject);
+router.post('/', authorizeRoles('ADMIN'), postProject);
 router.put('/:id', putProject);
 router.delete('/:id', deleteProject);
 

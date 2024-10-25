@@ -19,3 +19,5 @@ export const projectSchema = z.object({
     })
   ),
 });
+
+export const updateProjectSchema = projectSchema.partial();

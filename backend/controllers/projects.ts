@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma';
-import { projectSchema } from '../schema/projectSchema';
-import { z } from 'zod';
+import { projectSchema, updateProjectSchema } from '../schema/projectSchema';
+import { z, ZodError } from 'zod';
 
 export const getProjects = async (req: Request, res: Response) => {
   try {
@@ -117,15 +117,52 @@ export const postProject = async (
   }
 };
 
-export const putProject = (req: Request, res: Response) => {
+export const putProject = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   const { id } = req.params;
-  const { body } = req;
 
-  res.json({
-    msg: 'putProject',
-    id,
-    body,
-  });
+  try {
+    const validateData = projectSchema
+      .omit({ tasks: true, users: true })
+      .parse(req.body);
+
+    const existingProject = await prisma.project.findUnique({
+      where: { id: parseInt(id) },
+    });
+    if (!existingProject) {
+      res.status(404).json({ message: 'Project not found' });
+      return;
+    }
+
+    const updatedProject = await prisma.project.update({
+      where: { id: parseInt(id) },
+      data: {
+        name: validateData.name,
+        description: validateData.description,
+        start_date: new Date(validateData.start_date),
+        end_date: new Date(validateData.end_date),
+      },
+    });
+
+    res.status(200).json({
+      message: 'Project updated successfully',
+      project: updatedProject,
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: error.errors.map((err) => ({
+          path: err.path,
+          message: err.message,
+        })),
+      });
+    }
+    next(error);
+  }
 };
 
 export const deleteProject = (req: Request, res: Response) => {

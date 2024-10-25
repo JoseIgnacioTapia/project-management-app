@@ -6,7 +6,6 @@ import {
   postProject,
   putProject,
 } from '../controllers/projects';
-import { authenticateJWT } from '../middlewares/authenticateJWT';
 import { authorizeRoles } from '../middlewares/authorizeRole';
 
 const router = Router();

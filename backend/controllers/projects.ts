@@ -165,11 +165,33 @@ export const putProject = async (
   }
 };
 
-export const deleteProject = (req: Request, res: Response) => {
+export const deleteProject = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { id } = req.params;
 
-  res.json({
-    msg: 'deleteProject',
-    id,
-  });
+  try {
+    const existingProject = await prisma.project.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!existingProject) {
+      res.status(404).json({ message: 'Project not found' });
+      return;
+    }
+
+    const updatedProject = await prisma.project.update({
+      where: { id: parseInt(id) },
+      data: { status: 0 },
+    });
+
+    res.status(200).json({
+      message: 'Project marked as inactive successfully',
+      project: updatedProject,
+    });
+  } catch (error) {
+    next(error);
+  }
 };

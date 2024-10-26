@@ -13,7 +13,7 @@ const router = Router();
 router.get('/', getProjects);
 router.get('/:id', getProject);
 router.post('/', authorizeRoles('ADMIN'), postProject);
-router.put('/:id', putProject);
+router.put('/:id', authorizeRoles('ADMIN'), putProject);
 router.delete('/:id', deleteProject);
 
 export default router;

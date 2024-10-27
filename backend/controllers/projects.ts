@@ -6,6 +6,9 @@ import { z, ZodError } from 'zod';
 export const getProjects = async (req: Request, res: Response) => {
   try {
     const projects = await prisma.project.findMany({
+      where: {
+        status: 1,
+      },
       include: {
         users: true,
         tasks: true,
@@ -35,7 +38,7 @@ export const getProject = async (
     }
 
     const project = await prisma.project.findUnique({
-      where: { id: projectId },
+      where: { id: projectId, status: 1 },
       include: {
         users: true,
         tasks: true,
@@ -43,7 +46,7 @@ export const getProject = async (
     });
 
     if (!project) {
-      res.status(404).json({ message: 'Project not found' });
+      res.status(404).json({ message: 'Project not found or inactive' });
     }
 
     res.status(200).json({ project });
@@ -130,10 +133,10 @@ export const putProject = async (
       .parse(req.body);
 
     const existingProject = await prisma.project.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), status: 1 },
     });
     if (!existingProject) {
-      res.status(404).json({ message: 'Project not found' });
+      res.status(404).json({ message: 'Project not found or inactive' });
       return;
     }
 
@@ -174,11 +177,13 @@ export const deleteProject = async (
 
   try {
     const existingProject = await prisma.project.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), status: 1 },
     });
 
     if (!existingProject) {
-      res.status(404).json({ message: 'Project not found' });
+      res
+        .status(404)
+        .json({ message: 'Project not found or already inactive' });
       return;
     }
 

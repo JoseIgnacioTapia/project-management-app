@@ -1,4 +1,7 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import prisma from '../prisma';
+import { taskSchema } from '../schema/taskSchema';
+import { ZodError } from 'zod';
 
 export const getTask = (req: Request, res: Response) => {
   const { project_id } = req.query;
@@ -19,13 +22,77 @@ export const getTask = (req: Request, res: Response) => {
   });
 };
 
-export const postTask = (req: Request, res: Response) => {
-  const { body } = req;
+export const postTask = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const validatedData = taskSchema.parse(req.body);
 
-  res.json({
-    msg: 'postTask',
-    body,
-  });
+    const { title, description, state, project_id, assigned_to } =
+      validatedData;
+
+    const projectExists = await prisma.project.findUnique({
+      where: { id: project_id },
+    });
+
+    if (!projectExists) {
+      res.status(404).json({ message: 'Project not found' });
+      return;
+    }
+
+    const userExists = await prisma.user.findUnique({
+      where: { id: assigned_to },
+    });
+
+    if (!userExists) {
+      res.status(404).json({ message: 'Assigned user not found' });
+      return;
+    }
+
+    // Check if a task with the same title already exists in the project
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        title,
+        project_id,
+      },
+    });
+
+    if (existingTask) {
+      res.status(409).json({
+        message: 'A task with the same title already exists in this project',
+      });
+      return;
+    }
+
+    // Create task
+    const newTask = await prisma.task.create({
+      data: {
+        title,
+        description,
+        state,
+        project: { connect: { id: project_id } },
+        user: { connect: { id: assigned_to } },
+      },
+    });
+
+    res
+      .status(201)
+      .json({ message: 'Task created succesfully', task: newTask });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: error.errors.map((err) => ({
+          path: err.path,
+          message: err.message,
+        })),
+      });
+    } else {
+      next(error);
+    }
+  }
 };
 
 export const patchTask = (req: Request, res: Response) => {

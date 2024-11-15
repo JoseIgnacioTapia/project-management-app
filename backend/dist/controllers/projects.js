@@ -23,7 +23,11 @@ const getProjects = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 status: 1,
             },
             include: {
-                users: true,
+                users: {
+                    include: {
+                        user: true,
+                    },
+                },
                 tasks: true,
             },
         });
@@ -78,22 +82,6 @@ const postProject = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
                 description,
                 start_date: new Date(start_date),
                 end_date: new Date(end_date),
-                users: {
-                    create: (users === null || users === void 0 ? void 0 : users.map((userId) => ({
-                        user: { connect: { id: userId } },
-                    }))) || [],
-                },
-                tasks: {
-                    create: (tasks === null || tasks === void 0 ? void 0 : tasks.map((task) => ({
-                        title: task.title,
-                        description: task.decription,
-                        state: task.state || 'PENDING',
-                        assigned_to: task.assigned_to,
-                    }))) || [],
-                },
-            },
-            include: {
-                users: true,
             },
         });
         res

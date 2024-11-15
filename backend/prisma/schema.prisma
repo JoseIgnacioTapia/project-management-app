@@ -65,4 +65,5 @@ model ProjectUser {
   project    Project  @relation(fields: [project_id], references: [id])
 
   @@id([user_id, project_id])
+  @@unique([user_id, project_id])
 }

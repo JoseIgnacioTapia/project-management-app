@@ -3,23 +3,41 @@ import prisma from '../prisma';
 import { taskSchema } from '../schema/taskSchema';
 import { ZodError } from 'zod';
 
-export const getTask = (req: Request, res: Response) => {
-  const { project_id } = req.query;
+export const getTasksByProject = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { project_id } = req.query;
 
-  //   if (!project_id) {
-  //     return res.status(400).json({
-  //       msg: 'Project ID is required to filter tasks',
-  //     });
-  //   }
+    const projectId = parseInt(project_id as string);
+    if (isNaN(projectId)) {
+      res.status(400).json({ message: 'Invalid project ID' });
+      return;
+    }
 
-  // La lógica para obtener las tareas por project_id desde la base de datos.
+    const projectExists = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+    if (!projectExists) {
+      res.status(404).json({ message: 'Project not found' });
+      return;
+    }
 
-  res.json({
-    msg: 'getTask',
-    project_id,
-    // Las tareas filtradas:
-    tasks: [], // Array de las tareas filtradas por project_id
-  });
+    // Get Tasks by Project
+    const tasks = await prisma.task.findMany({
+      where: { project_id: projectId },
+      include: {
+        user: true,
+      },
+    });
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks', error);
+    next(error);
+  }
 };
 
 export const postTask = async (
@@ -74,6 +92,21 @@ export const postTask = async (
         state,
         project: { connect: { id: project_id } },
         user: { connect: { id: assigned_to } },
+      },
+    });
+
+    // Update the ProjectUser table to reflect the user's assignment to the project
+    await prisma.projectUser.upsert({
+      where: {
+        user_id_project_id: {
+          user_id: assigned_to,
+          project_id: project_id,
+        },
+      },
+      update: {},
+      create: {
+        user_id: assigned_to,
+        project_id: project_id,
       },
     });
 

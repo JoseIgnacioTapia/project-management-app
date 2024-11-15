@@ -10,7 +10,11 @@ export const getProjects = async (req: Request, res: Response) => {
         status: 1,
       },
       include: {
-        users: true,
+        users: {
+          include: {
+            user: true,
+          },
+        },
         tasks: true,
       },
     });
@@ -81,24 +85,6 @@ export const postProject = async (
         description,
         start_date: new Date(start_date),
         end_date: new Date(end_date),
-        users: {
-          create:
-            users?.map((userId: string) => ({
-              user: { connect: { id: userId } },
-            })) || [],
-        },
-        tasks: {
-          create:
-            tasks?.map((task: any) => ({
-              title: task.title,
-              description: task.decription,
-              state: task.state || 'PENDING',
-              assigned_to: task.assigned_to,
-            })) || [],
-        },
-      },
-      include: {
-        users: true,
       },
     });
 

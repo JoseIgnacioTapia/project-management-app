@@ -12,26 +12,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.patchTask = exports.postTask = exports.getTask = void 0;
+exports.patchTask = exports.postTask = exports.getTasksByProject = void 0;
 const prisma_1 = __importDefault(require("../prisma"));
 const taskSchema_1 = require("../schema/taskSchema");
 const zod_1 = require("zod");
-const getTask = (req, res) => {
-    const { project_id } = req.query;
-    //   if (!project_id) {
-    //     return res.status(400).json({
-    //       msg: 'Project ID is required to filter tasks',
-    //     });
-    //   }
-    // La lógica para obtener las tareas por project_id desde la base de datos.
-    res.json({
-        msg: 'getTask',
-        project_id,
-        // Las tareas filtradas:
-        tasks: [], // Array de las tareas filtradas por project_id
-    });
-};
-exports.getTask = getTask;
+const getTasksByProject = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { project_id } = req.query;
+        const projectId = parseInt(project_id);
+        if (isNaN(projectId)) {
+            res.status(400).json({ message: 'Invalid project ID' });
+            return;
+        }
+        const projectExists = yield prisma_1.default.project.findUnique({
+            where: { id: projectId },
+        });
+        if (!projectExists) {
+            res.status(404).json({ message: 'Project not found' });
+            return;
+        }
+        // Get Tasks by Project
+        const tasks = yield prisma_1.default.task.findMany({
+            where: { project_id: projectId },
+            include: {
+                user: true,
+            },
+        });
+        res.status(200).json(tasks);
+    }
+    catch (error) {
+        console.error('Error fetching tasks', error);
+        next(error);
+    }
+});
+exports.getTasksByProject = getTasksByProject;
 const postTask = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const validatedData = taskSchema_1.taskSchema.parse(req.body);
@@ -71,6 +85,20 @@ const postTask = (req, res, next) => __awaiter(void 0, void 0, void 0, function*
                 state,
                 project: { connect: { id: project_id } },
                 user: { connect: { id: assigned_to } },
+            },
+        });
+        // Update the ProjectUser table to reflect the user's assignment to the project
+        yield prisma_1.default.projectUser.upsert({
+            where: {
+                user_id_project_id: {
+                    user_id: assigned_to,
+                    project_id: project_id,
+                },
+            },
+            update: {},
+            create: {
+                user_id: assigned_to,
+                project_id: project_id,
             },
         });
         res

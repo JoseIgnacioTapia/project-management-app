@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma';
-import { taskSchema } from '../schema/taskSchema';
+import { taskSchema, taskStateSchema } from '../schema/taskSchema';
 import { ZodError } from 'zod';
 
 export const getTasksByProject = async (
@@ -128,13 +128,47 @@ export const postTask = async (
   }
 };
 
-export const patchTask = (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { body } = req;
+export const patchTask = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
 
-  res.json({
-    msg: 'patchTask',
-    id,
-    body,
-  });
+    const validatedData = taskStateSchema.parse(req.body);
+
+    const { state } = validatedData;
+
+    const existingTask = await prisma.task.findUnique({
+      where: { id: parseInt(id, 10) },
+    });
+
+    if (!existingTask) {
+      res.status(404).json({ message: 'Task not found' });
+      return;
+    }
+
+    const updatedTask = await prisma.task.update({
+      where: { id: parseInt(id, 10) },
+      data: { state },
+    });
+
+    res.status(200).json({
+      message: 'Task state updated successfully',
+      task: updatedTask,
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json({
+        message: 'Invalid request body',
+        errors: error.errors.map((err) => ({
+          path: err.path,
+          message: err.message,
+        })),
+      });
+    } else {
+      next(error);
+    }
+  }
 };

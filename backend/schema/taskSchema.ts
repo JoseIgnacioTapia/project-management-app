@@ -10,3 +10,7 @@ export const taskSchema = z.object({
     .positive('Project ID must be a positive integer'),
   assigned_to: z.string().min(1, 'Assigned user ID is required'),
 });
+
+export const taskStateSchema = z.object({
+  state: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED']),
+});

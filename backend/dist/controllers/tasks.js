@@ -121,14 +121,41 @@ const postTask = (req, res, next) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.postTask = postTask;
-const patchTask = (req, res) => {
-    const { id } = req.params;
-    const { body } = req;
-    res.json({
-        msg: 'patchTask',
-        id,
-        body,
-    });
-};
+const patchTask = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        const validatedData = taskSchema_1.taskStateSchema.parse(req.body);
+        const { state } = validatedData;
+        const existingTask = yield prisma_1.default.task.findUnique({
+            where: { id: parseInt(id, 10) },
+        });
+        if (!existingTask) {
+            res.status(404).json({ message: 'Task not found' });
+            return;
+        }
+        const updatedTask = yield prisma_1.default.task.update({
+            where: { id: parseInt(id, 10) },
+            data: { state },
+        });
+        res.status(200).json({
+            message: 'Task state updated successfully',
+            task: updatedTask,
+        });
+    }
+    catch (error) {
+        if (error instanceof zod_1.ZodError) {
+            res.status(400).json({
+                message: 'Invalid request body',
+                errors: error.errors.map((err) => ({
+                    path: err.path,
+                    message: err.message,
+                })),
+            });
+        }
+        else {
+            next(error);
+        }
+    }
+});
 exports.patchTask = patchTask;
 //# sourceMappingURL=tasks.js.map

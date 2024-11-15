@@ -6,6 +6,6 @@ const router = Router();
 
 router.get('/', getTasksByProject);
 router.post('/', authorizeRoles('ADMIN'), postTask);
-router.patch('/:id', patchTask);
+router.patch('/:id', authorizeRoles('ADMIN'), patchTask);
 
 export default router;
